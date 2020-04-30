@@ -1,0 +1,128 @@
+setwd("C:\\Users\\-------\\Downloads")
+read.csv("owid-covid-data.csv")
+
+COVID = owid.covid.data
+
+COVID$POSIXtime = as.POSIXct(COVID$date, format = "%Y-%m-%d")
+COVID$date = NULL
+
+COVID_sub = COVID[COVID$location %in% c("France", "Italy", "United Kingdom", "Spain", "United States"),]
+
+COVID_sub$GreaterThan100Deaths = COVID_sub$total_deaths > 100
+
+COVID_sub$GreaterThan100Deaths = COVID_sub$GreaterThan100Deaths*1
+
+COVID_sub$DaysAfter100Deaths = ave(COVID_sub$GreaterThan100Deaths, COVID_sub$location, FUN=cumsum)
+
+a = ggplot(data=COVID_sub, aes(x=DaysAfter100Deaths, y=total_deaths, colour=location)) + 
+  geom_line(linetype = "dashed", size=1) +
+  ggtitle("Total Deaths per Country vs. Days After 100th Death") +
+  ylab("Total Deaths") +
+  xlab("Days Since 100th Death") +
+  theme(legend.position = "bottom", 
+        legend.direction = "horizontal", 
+        legend.key.width = unit(1.4,"cm"), 
+        legend.key = element_rect(fill = "white"),
+        legend.title = element_blank(),
+        panel.background = element_rect(fill = "white",
+                                        colour = "white",
+                                        size = 0.5, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "black"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "gray"))
+
+b = ggplot(data=COVID_sub, aes(x=DaysAfter100Deaths, y=total_deaths_per_million, colour=location)) + 
+  geom_line(linetype = "dashed", size=1) +
+  ggtitle("Total Deaths per Country per Million Pop vs. Days After 100th Death") +
+  ylab("Total Deaths per Million Pop") +
+  xlab("Days Since 100th Death") +
+  theme(legend.position = "bottom", 
+        legend.direction = "horizontal", 
+        legend.key.width = unit(1.4,"cm"), 
+        legend.key = element_rect(fill = "white"),
+        legend.title = element_blank(),
+        panel.background = element_rect(fill = "white",
+                                        colour = "white",
+                                        size = 0.5, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "black"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "gray"))
+
+#Google search as source data [pop/sq.mile]:
+PopDens_UK = 727
+PopDens_Italy = 532
+PopDens_France = 309
+PopDens_Spain = 229
+PopDens_USA = 93
+
+Dens_Factor_UK = PopDens_UK/PopDens_USA
+Dens_Factor_Italy = PopDens_Italy/PopDens_USA
+Dens_Factor_France = PopDens_France/PopDens_USA
+Dens_Factor_Spain = PopDens_Spain/PopDens_USA
+Dens_Factor_USA = PopDens_USA/PopDens_USA
+
+COVID_sub$total_deaths_per_million_per_popsqmile = ifelse(COVID_sub$location=="United Kingdom",COVID_sub$total_deaths_per_million / Dens_Factor_UK, 
+                                                          ifelse(COVID_sub$location=="Italy", COVID_sub$total_deaths_per_million / Dens_Factor_Italy,
+                                                                 ifelse(COVID_sub$location=="France", COVID_sub$total_deaths_per_million / Dens_Factor_France, 
+                                                                        ifelse(COVID_sub$location=="Spain", COVID_sub$total_deaths_per_million / Dens_Factor_Spain,
+                                                                               COVID_sub$total_deaths_per_million / Dens_Factor_USA))))
+View(COVID_sub)
+
+c = ggplot(data=COVID_sub, aes(x=DaysAfter100Deaths, y=total_deaths_per_million_per_popsqmile, colour=location)) + 
+  geom_line(linetype = "dashed", size=1) +
+  ggtitle("Total Deaths per Million Pop Scaled by Pop Density vs. Days After 100th Death") +
+  ylab("Total Deaths per Million Pop Scaled for Pop Dens") +
+  xlab("Days Since 100th Death") +
+  theme(legend.position = "bottom", 
+        legend.direction = "horizontal", 
+        legend.key.width = unit(1.4,"cm"), 
+        legend.key = element_rect(fill = "white"),
+        legend.title = element_blank(),
+        panel.background = element_rect(fill = "white",
+                                        colour = "white",
+                                        size = 0.5, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "black"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "gray"))
+
+ggarrange(a, b, c, 
+          labels = c("A", "B", "C"),
+          ncol = 2, nrow = 2)
+
+Area_UK = 2424.95 #100 km^2
+Area_Italy = 3013.38 #100 km^2
+Area_France = 6438.01 #100 km^2
+Area_Spain = 5059.90 #100 km^2
+Area_USA = 98340.00 #100 km^2
+
+COVID_sub$total_deaths_sq_km = ifelse(COVID_sub$location=="United Kingdom",COVID_sub$total_deaths / Area_UK, 
+                                                          ifelse(COVID_sub$location=="Italy", COVID_sub$total_deaths / Area_Italy,
+                                                                 ifelse(COVID_sub$location=="France", COVID_sub$total_deaths / Area_France, 
+                                                                        ifelse(COVID_sub$location=="Spain", COVID_sub$total_deaths / Area_Spain,
+                                                                               COVID_sub$total_deaths / Area_USA))))
+
+d = ggplot(data=COVID_sub, aes(x=DaysAfter100Deaths, y=total_deaths_sq_km, colour=location)) + 
+  geom_line(linetype = "dashed", size=1) +
+  ggtitle("Total Deaths per 100 Sq KM vs. Days After 100th Death") +
+  ylab("Total Deaths per 100 Sq. KM") +
+  xlab("Days Since 100th Death") +
+  theme(legend.position = "bottom", 
+        legend.direction = "horizontal", 
+        legend.key.width = unit(1.4,"cm"), 
+        legend.key = element_rect(fill = "white"),
+        legend.title = element_blank(),
+        panel.background = element_rect(fill = "white",
+                                        colour = "white",
+                                        size = 0.5, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "black"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "gray"))
+d
+
+ggarrange(a, b, d, c, 
+          labels = c("A", "B", "C", "D"),
+          ncol = 2, nrow = 2)
